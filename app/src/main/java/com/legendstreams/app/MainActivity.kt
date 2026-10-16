@@ -400,46 +400,46 @@ private fun DetailScreen(
 }
 
 @Composable
+
+@Composable
 private fun HlsPlayer(url: String) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current.applicationContext
     val player = remember(url) {
         ExoPlayer.Builder(context).build().apply {
-            val mediaItemBuilder = PlayerMediaItem.Builder().setUri(url)
-            if (url.substringBefore('?').endsWith(".m3u8", ignoreCase = true)) {
-                mediaItemBuilder.setMimeType(MimeTypes.APPLICATION_M3U8)
+            val itemBuilder = androidx.media3.common.MediaItem.Builder()
+                .setUri(url)
+
+            if (url.substringBefore("?")
+                    .endsWith(".m3u8", ignoreCase = true)) {
+                itemBuilder.setMimeType(
+                    androidx.media3.common.MimeTypes.APPLICATION_M3U8
+                )
             }
-            setMediaItem(mediaItemBuilder.build())
-            prepare()
+
+            setMediaItem(itemBuilder.build())
             playWhenReady = true
+            prepare()
         }
     }
-    DisposableEffect(lifecycleOwner, player) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> player.pause()
-                Lifecycle.Event.ON_RESUME -> if (player.playbackState != androidx.media3.common.Player.STATE_IDLE) player.play()
-                else -> Unit
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
+
+    DisposableEffect(player) {
         onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
             player.release()
         }
     }
+
     AndroidView(
         factory = { ctx ->
             PlayerView(ctx).apply {
                 this.player = player
                 useController = true
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
             }
         },
-        update = { it.player = player },
-        modifier = Modifier.fillMaxWidth().height(230.dp)
+        update = { view ->
+            view.player = player
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
     )
 }
