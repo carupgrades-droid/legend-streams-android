@@ -400,8 +400,6 @@ private fun DetailScreen(
 }
 
 @Composable
-
-@Composable
 private fun HlsPlayer(url: String) {
     val context = LocalContext.current.applicationContext
     val player = remember(url) {
