@@ -40,8 +40,9 @@ jobs:
             ROOT=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)
           fi
 
-          rsync -a \
+                    rsync -a \
             --exclude='.git/' \
+            --exclude='.github/workflows/**' \
             "$ROOT"/ ./
 
           git add -A
