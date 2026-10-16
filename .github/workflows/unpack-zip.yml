@@ -1,3 +1,4 @@
+
 name: Extract Android Project ZIP
 
 on:
@@ -9,25 +10,42 @@ permissions:
 jobs:
   extract:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Install extraction tools
+        run: sudo apt-get update && sudo apt-get install -y unzip rsync
+
       - name: Extract project ZIP
+        shell: bash
         run: |
           set -euo pipefail
+
           ZIP="LegendStreams-GitHub-Build.zip"
-          test -f "$ZIP"
+          if [ ! -f "$ZIP" ]; then
+            echo "ERROR: $ZIP was not found in the repository root."
+            exit 1
+          fi
+
           mkdir -p /tmp/legend-project
           unzip -q "$ZIP" -d /tmp/legend-project
+
           ROOT="/tmp/legend-project"
-          TOP_COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 | wc -l)
-          DIR_COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | wc -l)
-          if [ "$TOP_COUNT" -eq 1 ] && [ "$DIR_COUNT" -eq 1 ]; then
+          COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 | wc -l)
+          DIRS=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | wc -l)
+
+          if [ "$COUNT" -eq 1 ] && [ "$DIRS" -eq 1 ]; then
             ROOT=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)
           fi
-          rsync -a --exclude='.git/' --exclude='unpack-zip.yml' "$ROOT"/ ./
+
+          rsync -a \
+            --exclude='.git/' \
+            "$ROOT"/ ./
+
           git add -A
+
           if git diff --cached --quiet; then
             echo "No new extracted files to commit."
           else
@@ -37,3 +55,14 @@ jobs:
             git push
           fi
 
+      - name: Save extracted project as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: legend-streams-extracted-project
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !LegendStreams-GitHub-Build.zip
+          if-no-files-found: error
+          retention-days: 7
