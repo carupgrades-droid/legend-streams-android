@@ -1,1 +1,39 @@
+name: Extract Android Project ZIP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          set -euo pipefail
+          ZIP="LegendStreams-GitHub-Build.zip"
+          test -f "$ZIP"
+          mkdir -p /tmp/legend-project
+          unzip -q "$ZIP" -d /tmp/legend-project
+          ROOT="/tmp/legend-project"
+          TOP_COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 | wc -l)
+          DIR_COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | wc -l)
+          if [ "$TOP_COUNT" -eq 1 ] && [ "$DIR_COUNT" -eq 1 ]; then
+            ROOT=$(find "$ROOT" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          fi
+          rsync -a --exclude='.git/' --exclude='unpack-zip.yml' "$ROOT"/ ./
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No new extracted files to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Extract Android project files from ZIP"
+            git push
+          fi
 
