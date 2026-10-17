@@ -399,19 +399,27 @@ private fun DetailScreen(
     }
 }
 
+
 @Composable
 private fun HlsPlayer(url: String) {
     val context = LocalContext.current.applicationContext
-    val player = remember(url) {
+    var retryCount by remember(url) { mutableIntStateOf(0) }
+    var isBuffering by remember(url, retryCount) {
+        mutableStateOf(true)
+    }
+    var playbackError by remember(url, retryCount) {
+        mutableStateOf<String?>(null)
+    }
+    var isFullscreen by remember(url) { mutableStateOf(false) }
+
+    val player = remember(url, retryCount) {
         ExoPlayer.Builder(context).build().apply {
-            val itemBuilder = androidx.media3.common.MediaItem.Builder()
-                .setUri(url)
+            val itemBuilder =
+                androidx.media3.common.MediaItem.Builder().setUri(url)
 
             if (url.substringBefore("?")
                     .endsWith(".m3u8", ignoreCase = true)) {
-                itemBuilder.setMimeType(
-                    androidx.media3.common.MimeTypes.APPLICATION_M3U8
-                )
+                itemBuilder.setMimeType(MimeTypes.APPLICATION_M3U8)
             }
 
             setMediaItem(itemBuilder.build())
@@ -421,23 +429,113 @@ private fun HlsPlayer(url: String) {
     }
 
     DisposableEffect(player) {
+        val listener = object : androidx.media3.common.Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                isBuffering =
+                    state == androidx.media3.common.Player.STATE_BUFFERING
+            }
+
+            override fun onPlayerError(
+                error: androidx.media3.common.PlaybackException
+            ) {
+                isBuffering = false
+                playbackError =
+                    error.message ?: "Unable to play this video."
+            }
+        }
+
+        player.addListener(listener)
         onDispose {
+            player.removeListener(listener)
             player.release()
         }
     }
 
-    AndroidView(
-        factory = { ctx ->
-            PlayerView(ctx).apply {
-                this.player = player
-                useController = true
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(230.dp)
+                .background(Color.Black)
+        ) {
+            AndroidView(
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        this.player = player
+                        useController = true
+                    }
+                },
+                update = { it.player = player },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            if (isBuffering && playbackError == null) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Mint
+                )
             }
-        },
-        update = { view ->
-            view.player = player
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(230.dp)
-    )
+
+            TextButton(
+                onClick = { isFullscreen = true },
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Text("Full screen", color = Color.White)
+            }
+        }
+
+        if (playbackError != null) {
+            Text(
+                text = "Playback error: $playbackError",
+                color = Color(0xFFFFB4AB),
+                modifier = Modifier.padding(8.dp)
+            )
+            TextButton(onClick = {
+                playbackError = null
+                retryCount++
+            }) {
+                Text("Retry", color = Mint)
+            }
+        }
+    }
+
+    if (isFullscreen) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { isFullscreen = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                AndroidView(
+                    factory = { ctx ->
+                        PlayerView(ctx).apply {
+                            this.player = player
+                            useController = true
+                        }
+                    },
+                    update = { it.player = player },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                TextButton(
+                    onClick = { isFullscreen = false },
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Text("Close full screen", color = Color.White)
+                }
+
+                if (isBuffering && playbackError == null) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Mint
+                    )
+                }
+            }
+        }
+    }
 }
