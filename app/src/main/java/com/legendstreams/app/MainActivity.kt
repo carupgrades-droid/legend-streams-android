@@ -63,7 +63,7 @@ private val demoTitles = listOf(
     MediaItem(
         "Big Buck Bunny", "Movie", "2008", "Open animation",
         "A short animated open movie from the Blender Foundation. Licensed under Creative Commons Attribution 3.0; attribution must be retained.",
-        playbackUrl = "https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4",
+        playbackUrl = "https://uploads.video-commander.com/sample/BigBuckBunny.mp4",
         posterUrl = "https://peach.blender.org/wp-content/uploads/title_anouncement.jpg?x11217",
         sourceUrl = "https://peach.blender.org/about/",
         licenseAttribution = "Big Buck Bunny by the Blender Foundation. Licensed under Creative Commons Attribution 3.0 (CC BY 3.0). Source and license: https://peach.blender.org/about/"
