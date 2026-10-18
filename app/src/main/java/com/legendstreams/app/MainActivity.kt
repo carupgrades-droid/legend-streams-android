@@ -69,6 +69,23 @@ private val demoTitles = listOf(
         licenseAttribution = "Big Buck Bunny by the Blender Foundation. Licensed under Creative Commons Attribution 3.0 (CC BY 3.0). Source and license: https://peach.blender.org/about/"
     ),
     MediaItem("HLS Player Test", "Movie", "DEMO", "Test stream", "A public test stream used to validate the video player. This is not a commercial movie.", TEST_HLS_URL),
+    
+    MediaItem(
+        "HLS Test Stream 2", "Movie", "DEMO", "HLS test",
+        "Second public HLS test stream.",
+        "https://test-streams.mux.dev/test_001/stream.m3u8"
+    ),
+    MediaItem(
+        "Apple HLS Sample", "Movie", "DEMO", "HLS test",
+        "Apple sample stream for testing HLS playback.",
+        "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"
+    ),
+    MediaItem(
+        "Sintel Trailer", "Movie", "DEMO", "MP4 test",
+        "Open movie trailer for testing MP4 playback.",
+        "https://download.blender.org/durian/trailer/sintel_trailer-480p.mp4"
+    ),
+
     MediaItem("Midnight Signal", "Movie", "2025", "Sci-Fi", "A deep-space transmission changes the course of a quiet mission."),
     MediaItem("The Last Harbor", "Series", "2024", "Drama", "A coastal town rebuilds after a mysterious storm."),
     MediaItem("Wild Earth", "Series", "2025", "Documentary", "Explore remarkable habitats and the wildlife that calls them home."),
@@ -133,7 +150,7 @@ fun LegendStreamsApp() {
     }
 
     val catalogItems = when (selectedTab) {
-        "Movies" -> archiveTitles + remoteTitles + demoTitles.filter { it.title == "Big Buck Bunny" || it.title == "HLS Player Test" }
+        "Movies" -> archiveTitles + remoteTitles + demoTitles.filter { it.playbackUrl != null }
         "Live TV" -> demoTitles
         else -> remoteTitles + demoTitles.filter { it.playbackUrl != null } + demoTitles.filter { saved.contains(it.title) }
     }
